@@ -1,0 +1,99 @@
+project/
+|
+|-- app.py
+|-- README.md
+|-- requirements.txt
+|-- Streamlit Project Structure.txt
+|-- launcher.bat
+|-- launcher.spec
+|
+|-- converters/
+|   |-- __init__.py
+|   |-- bank_detector.py
+|   |-- bca.py
+|   |-- bni.py
+|   |-- bri.py
+|   |-- dki.py
+|   |-- dki_txt.py
+|   `-- mandiri.py
+|
+|-- extractors/
+|   |-- __init__.py
+|   |-- slik_extractor.py
+|   `-- bank_statement_extractor.py
+|
+|-- transformers/
+|   |-- __init__.py
+|   |-- slik_transformer.py
+|   `-- bank_statement_transformer.py
+|
+|-- validators/
+|   |-- __init__.py
+|   |-- slik_validator.py
+|   `-- bank_statement_validator.py
+|
+|-- loaders/
+|   |-- __init__.py
+|   `-- parquet_store.py
+|
+|-- services/
+|   |-- __init__.py
+|   |-- slik_service.py
+|   |-- bank_statement_etl_service.py
+|   |-- etl_storage_service.py
+|   |-- cache_service.py
+|   |-- error_report_service.py
+|   |-- logging_service.py
+|   `-- file_utils.py
+|
+|-- storage/
+|   |-- __init__.py
+|   |-- duckdb_store.py
+|   |-- sqlite_metadata.py
+|   |-- file_hash.py
+|   |-- lineage.py
+|   `-- paths.py
+|
+|-- dashboards/
+|   |-- __init__.py
+|   `-- streamlit_slik_dashboard.py
+|
+|-- data/
+|   |-- raw/
+|   |-- staging/
+|   |-- dwh/
+|   |-- mart/
+|   |-- metadata/
+|   `-- warehouse.duckdb
+|
+|-- logs/
+|   `-- app.log
+|
+|-- uploads/
+|-- outputs/
+|-- cache/
+|   `-- staging/
+|-- temp/
+|
+|-- extract_slik_text_to_excel.py
+|-- excel_dashboard.py
+|-- convert_mutasi_bca.py
+|-- convert_mutasi_bni.py
+|-- convert_mutasi_dki.py
+|-- convert_mutasi_BRI.py
+|-- convert_mutasi_mandiri.py
+|-- convert_mutasi_dki_txt.py
+`-- convert_rekon_dki_txt.py
+
+Layer notes:
+- converters/: lightweight wrappers around existing converter scripts.
+- extractors/: parser wrappers that return dataframes.
+- transformers/: staging to DWH and mart transformations.
+- validators/: data quality checks.
+- loaders/: Parquet writing helpers.
+- storage/: DuckDB, SQLite metadata, file hash, lineage, and path helpers.
+- services/: Streamlit orchestration, ETL storage, cache, cleanup, logging, and error reports.
+- dashboards/: Streamlit dashboard rendering.
+- data/: local analytical storage; generated data files are ignored by Git.
+- uploads/, temp/, cache/: working folders that can be cleaned safely from the app.
+- outputs/: generated Excel, ZIP, and error report outputs.

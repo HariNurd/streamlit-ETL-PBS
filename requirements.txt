@@ -1,0 +1,19 @@
+# Streamlit UI
+streamlit
+
+# Data processing and Excel output
+pandas
+openpyxl
+plotly
+
+# PDF extraction and bank statement parsing
+PyMuPDF
+tabula-py
+jpype1
+
+# Local analytical storage
+duckdb
+pyarrow
+
+# Packaging
+pyinstaller

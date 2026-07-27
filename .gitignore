@@ -1,0 +1,140 @@
+# Local archives and ad-hoc working files
+ignore
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+env-win/
+venv/
+.venv/
+
+# Build artifacts
+build/
+dist/
+*.spec~
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+credentials*.json
+client_secret*.json
+service-account*.json
+*.kdbx
+
+# Local working folders
+uploads/
+temp/
+cache/
+
+# Generated outputs
+outputs/
+*.xlsx
+*.xlsm
+*.xls
+*.xlsb
+*.ods
+*.zip
+
+# Sensitive source documents and scans
+*.pdf
+*.txt
+*.csv
+*.tsv
+*.jsonl
+*.ndjson
+*.doc
+*.docx
+*.rtf
+*.odt
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tif
+*.tiff
+*.heic
+*.ofx
+*.qif
+*.mt940
+!Streamlit Project Structure.txt
+!requirements.txt
+
+# Local analytical storage outputs
+data/raw/*
+data/staging/*
+data/dwh/*
+data/mart/*
+data/metadata/*
+data/*.duckdb
+data/*.duckdb.wal
+*.parquet
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite3-journal
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.mdb
+*.accdb
+*.pkl
+*.pickle
+*.joblib
+
+# Keep data layer folders in Git
+!data/
+!data/raw/
+!data/raw/.gitkeep
+!data/staging/
+!data/staging/.gitkeep
+!data/dwh/
+!data/dwh/.gitkeep
+!data/mart/
+!data/mart/.gitkeep
+!data/metadata/
+!data/metadata/.gitkeep
+
+# Logs
+logs/*
+*.log
+*.log.*
+!logs/
+!logs/.gitkeep
+
+# Editor, backup, and temporary files
+*.bak
+*.tmp
+*.orig
+*~
+.DS_Store
+Thumbs.db
+
+# Training/generated local folders
+input_train/
+output_train/
+train/
+copy_paste/
+copy-paste/
