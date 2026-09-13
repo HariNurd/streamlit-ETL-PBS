@@ -436,7 +436,7 @@ def normalize_metadata_text(text):
 
 
 def extract_account_from_text(text):
-    """Extract account number from labels like NO. REKENING : 123456789."""
+    """Extract account number from a NO. REKENING label in the source PDF."""
     normalized = normalize_metadata_text(text)
     match = re.search(r"NO\.?\s*REKENING\s*:?\s*(\d{6,})", normalized)
     if match:
@@ -473,7 +473,7 @@ def extract_period_from_text(text):
 
 
 def extract_period_from_filename(pdf_file):
-    """Fallback month/year extraction from names like 123456789_APR_2026.pdf."""
+    """Fallback month/year extraction from <account>_<month>_<year>.pdf names."""
     stem = pdf_file.stem.upper()
     year_match = re.search(r"(20\d{2})", stem)
     year = year_match.group(1) if year_match else None
@@ -966,7 +966,7 @@ def ensure_xlsx_name(name):
 
 
 def output_name_for_group(group_info, output_name_template=None, force_unique=False):
-    """Create yearly workbook names like 123456789_2025.xlsx."""
+    """Create yearly workbook names using the account and statement year."""
     account = group_info["account"]
     year = group_info["year"]
     folder_name = group_info.get("folder", year)
