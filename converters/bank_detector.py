@@ -36,6 +36,14 @@ def detect_bank_from_pdf(pdf_file):
     text = _normalize_text("\n".join(text_parts))
     filename = _normalize_text(pdf_file.name)
 
+    # Prefer distinctive document headings over bank names in transfer remarks.
+    if "LAPORAN TRANSAKSI FINANSIAL" in text:
+        return "BRI"
+    if "LAPORAN MUTASI REKENING" in text and "RINCIAN TRANSAKSI" in text:
+        return "BNI"
+    if "TOTAL AMOUNT DEBITED" in text or "LAPORAN REKENING KORAN" in text and "REFERENCE" in text:
+        return "Mandiri"
+
     scores = {
         "BCA": _score_markers(
             text,
