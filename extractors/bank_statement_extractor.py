@@ -10,11 +10,11 @@ from storage.sqlite_metadata import find_successful_file_by_hash
 
 
 BANK_PDF_PARSERS = {
-    "BCA": ("convert_mutasi_bca", "process_pdf", "convert_mutasi_bca.process_pdf", "1.0.0"),
-    "BNI": ("convert_mutasi_bni", "process_pdf", "convert_mutasi_bni.process_pdf", "1.0.0"),
-    "DKI": ("convert_mutasi_dki", "process_pdf", "convert_mutasi_dki.process_pdf", "1.0.0"),
-    "Mandiri": ("convert_mutasi_mandiri", "process_pdf", "convert_mutasi_mandiri.process_pdf", "1.0.0"),
-    "BRI": ("convert_mutasi_BRI", "process_pdf", "convert_mutasi_BRI.process_pdf", "1.0.0"),
+    "BCA": ("convert_mutasi_bca", "process_pdf", "convert_mutasi_bca.process_pdf", "2.0.0"),
+    "BNI": ("convert_mutasi_bni", "process_pdf", "convert_mutasi_bni.process_pdf", "2.0.0"),
+    "DKI": ("convert_mutasi_dki", "process_pdf", "convert_mutasi_dki.process_pdf", "2.0.0"),
+    "Mandiri": ("convert_mutasi_mandiri", "process_pdf", "convert_mutasi_mandiri.process_pdf", "2.0.0"),
+    "BRI": ("convert_mutasi_BRI", "process_pdf", "convert_mutasi_BRI.process_pdf", "2.0.1"),
 }
 
 DKI_TXT_PARSER_NAME = "convert_mutasi_dki_txt.parse_txt_file"
