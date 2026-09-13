@@ -7,6 +7,8 @@ openpyxl
 plotly
 
 # PDF extraction and bank statement parsing
+pypdf>=6.0,<7
+cryptography>=46
 PyMuPDF
 tabula-py
 jpype1

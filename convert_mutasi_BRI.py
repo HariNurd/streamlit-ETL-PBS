@@ -1,3 +1,4 @@
+from services.pdf_statement_adapter import extract_frames, summary_metrics
 import argparse
 import re
 import sys
@@ -362,13 +363,8 @@ def report_extraction_balance(clean_df, df_summary, pdf_file):
 
 
 def process_pdf(pdf_file):
-    print("Membaca summary BRI dari isi PDF...")
-    df_summary = build_summary_from_text(pdf_file)
-    print("Membaca transaksi BRI dari teks PDF...")
-    df_final = read_transactions_from_text(pdf_file)
-    df_final = reconcile_transactions_with_balance(df_final, df_summary)
-    report_extraction_balance(df_final, df_summary, pdf_file)
-    return df_final, df_summary
+    """Parse through the validated shared PDF entry point."""
+    return extract_frames(pdf_file, "BRI")
 
 
 def safe_sheet_name(name):
@@ -411,11 +407,7 @@ def build_month_summary(clean_df, df_summary, pdf_file, metadata):
         "Mutasi Kredit Frek": count_amount(clean_df, "CR"),
         "Saldo (Rp)": summary_value(df_summary, "Saldo Akhir"),
         "Saldo Awal (Rp)": summary_value(df_summary, "Saldo Awal"),
-        "Adm": pd.NA,
-        "Pajak": sum_by_description(clean_df, "DB", r"\bPPH\b|PAJAK|TAX"),
-        "Bunga": pd.NA,
-        "Saldo Min": pd.NA,
-        "JaGir": pd.NA,
+        **summary_metrics(clean_df),
         "Year": metadata["year"],
         "MonthOrder": metadata["month_order"],
         "Source File": Path(pdf_file).name,

@@ -1,3 +1,4 @@
+from services.pdf_statement_adapter import extract_frames, summary_metrics
 import re
 import argparse
 import sys
@@ -1447,11 +1448,7 @@ def build_month_summary(clean_df, df_summary, pdf_file, metadata=None):
         "Mutasi Kredit Frek": count_amount(clean_df, "CR"),
         "Saldo (Rp)": summary_value(df_summary, "Saldo Akhir"),
         "Saldo Awal (Rp)": summary_value(df_summary, "Saldo Awal"),
-        "Adm": sum_by_description(clean_df, "DB", r"\bADM\b|ADMIN|BIAYA\s+ADMIN"),
-        "Pajak": sum_by_description(clean_df, "DB", r"\bPPH\b|PAJAK|TAX"),
-        "Bunga": sum_by_description(clean_df, "CR", r"BUNGA|INTEREST"),
-        "Saldo Min": sum_by_description(clean_df, "DB", r"SALDO\s+MIN"),
-        "JaGir": sum_by_description(clean_df, "CR", r"JASA\s+GIRO|JAGIR"),
+        **summary_metrics(clean_df),
     }
 
 
@@ -1777,20 +1774,21 @@ def parse_bni_with_fallback(pdf_file):
 
 
 def process_pdf(pdf_file):
-    return parse_bni_with_fallback(pdf_file)
+    """Parse through the validated shared PDF entry point."""
+    return extract_frames(pdf_file, "BNI")
 
 
 def export_to_excel(df_final, df_summary, output_file, pdf_file=None):
+    output_file = Path(output_file)
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
         if pdf_file is None:
             dataframe_for_excel(df_final).to_excel(writer, sheet_name="Transaksi", index=False)
-            style_monthly_sheet(writer.sheets["Transaksi"])
+            dataframe_for_excel(df_summary).to_excel(writer, sheet_name="Summary", index=False)
         else:
+            pdf_file = Path(pdf_file)
+            write_summary_sheet(writer, [build_month_summary(df_final, df_summary, pdf_file)])
             write_monthly_transaction_sheet(writer, df_final, df_summary, pdf_file, "Transaksi")
-        dataframe_for_excel(df_summary).to_excel(writer, sheet_name="Summary", index=False)
-
-        auto_fit_columns(writer.sheets["Summary"])
 
 
 def export_year_workbook(extracted_files, output_file):

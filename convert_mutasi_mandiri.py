@@ -1,3 +1,4 @@
+from services.pdf_statement_adapter import extract_frames, summary_metrics
 import argparse
 import re
 import sys
@@ -402,14 +403,8 @@ def reconcile_transactions_with_balance(clean_df, df_summary):
 
 
 def process_pdf(pdf_file):
-    print("Membaca summary Mandiri dari isi PDF...")
-    df_summary = build_summary_from_text(pdf_file)
-
-    print("Mengambil transaksi asli dari isi PDF...")
-    df_final = parse_transactions_from_text(pdf_file)
-    df_final = reconcile_transactions_with_balance(df_final, df_summary)
-    report_extraction_balance(df_final, df_summary, pdf_file)
-    return df_final, df_summary
+    """Parse through the validated shared PDF entry point."""
+    return extract_frames(pdf_file, "Mandiri")
 
 
 def sum_amount(df, column):
@@ -462,7 +457,7 @@ def monthly_groups(clean_df):
         return []
     result = []
     for (year, month), month_df in clean_df.groupby([clean_df["PostingDate"].dt.year, clean_df["PostingDate"].dt.month]):
-        month_df = month_df.sort_values("PostingDate").reset_index(drop=True)
+        month_df = month_df.sort_values("PostingDate", kind="stable").reset_index(drop=True)
         month_name = MONTH_NAMES.get(month, f"{month:02d}")
         result.append({
             "year": str(year),
@@ -489,11 +484,7 @@ def build_month_summary(month_info, pdf_file, metadata):
         "Mutasi Kredit Frek": count_amount(clean_df, "CR"),
         "Saldo (Rp)": clean_df["Saldo"].iloc[-1] if not clean_df.empty else pd.NA,
         "Saldo Awal (Rp)": month_info["opening_balance"],
-        "Adm": sum_by_description(clean_df, "DB", r"\bADM\b|ADMIN|BIAYA\s+ADM"),
-        "Pajak": sum_by_description(clean_df, "DB", r"\bPPH\b|PAJAK|TAX"),
-        "Bunga": sum_by_description(clean_df, "CR", r"BUNGA|INTEREST"),
-        "Saldo Min": sum_by_description(clean_df, "DB", r"SALDO\s+MIN"),
-        "JaGir": sum_by_description(clean_df, "CR", r"JASA\s+GIRO|JAGIR"),
+        **summary_metrics(clean_df),
     }
 
 

@@ -1,3 +1,4 @@
+from services.pdf_statement_adapter import extract_frames, summary_metrics
 import argparse
 import re
 import sys
@@ -656,11 +657,7 @@ def build_month_summary(clean_df, df_summary, pdf_file, metadata=None):
         "Mutasi Kredit Frek": count_amount(clean_df, "CR"),
         "Saldo (Rp)": summary_value(df_summary, "Saldo_Akhir"),
         "Saldo Awal (Rp)": summary_value(df_summary, "Saldo_Awal"),
-        "Adm": sum_by_description(clean_df, "DB", r"\bADM\b|ADMIN|BIAYA\s+ADMIN|FEE"),
-        "Pajak": sum_by_description(clean_df, "DB", r"\bPPH\b|PAJAK|TAX"),
-        "Bunga": sum_by_description(clean_df, "CR", r"BUNGA|INTEREST"),
-        "Saldo Min": sum_by_description(clean_df, "DB", r"SALDO\s+MIN"),
-        "JaGir": sum_by_description(clean_df, "CR", r"JASA\s+GIRO|JAGIR"),
+        **summary_metrics(clean_df),
     }
 
 
@@ -902,30 +899,41 @@ def style_summary_sheet(sheet):
 
 
 def process_pdf(pdf_file):
-    print("Membaca summary dari isi PDF...")
-    df_summary = build_summary_from_text(pdf_file)
+    """Parse through the validated shared PDF entry point."""
+    return extract_frames(pdf_file, "DKI")
 
-    print("Mengambil transaksi asli dari isi PDF...")
-    df_merged = parse_transactions_from_text(pdf_file)
 
-    print("Finalisasi DB/CR dan saldo...")
-    df_final = finalize_transactions(df_merged)
-    report_extraction_balance(df_final, df_summary, pdf_file)
-
-    return df_final, df_summary
+def account_export_items(df_final, df_summary, pdf_file):
+    metadata = extract_pdf_metadata(pdf_file)
+    items = []
+    for account, transactions in df_final.groupby("Account", sort=False):
+        recap = df_summary[df_summary["Account"] == account].copy()
+        account_metadata = {**metadata, "account": str(account)}
+        transactions = transactions.copy()
+        items.append({
+            "pdf_file": Path(pdf_file), "transactions": transactions, "summary": recap,
+            "summary_row": build_month_summary(transactions, recap, Path(pdf_file), account_metadata),
+            "sheet_name": metadata["month_label"].replace("-", "_") + "_" + str(account),
+            "month_order": metadata["month_order"], "year": metadata["year"], "account": str(account),
+        })
+    return items
 
 
 def export_to_excel(df_final, df_summary, output_file, pdf_file=None):
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        if pdf_file is None:
-            dataframe_for_excel(df_final).to_excel(writer, sheet_name="Transaksi", index=False)
-            style_monthly_sheet(writer.sheets["Transaksi"])
-        else:
-            write_monthly_transaction_sheet(writer, df_final, df_summary, pdf_file, "Transaksi")
+    if pdf_file is None:
+        raise ValueError("PDF source is required for account-specific summary export")
+    items = account_export_items(df_final, df_summary, Path(pdf_file))
+    if len(items) > 1:
+        for item in items:
+            item['summary_row']['Bulan'] += ' (' + item['account'] + ')'
+    export_year_workbook(items, Path(output_file))
 
-        dataframe_for_excel(df_summary).to_excel(writer, sheet_name="SummaryRaw", index=False)
-        auto_fit_columns(writer.sheets["SummaryRaw"])
+
+def convert_pdf(pdf_file, output_file):
+    pdf_file, output_file = Path(pdf_file), Path(output_file)
+    transactions, summary = process_pdf(pdf_file)
+    export_to_excel(transactions, summary, output_file, pdf_file)
+    return output_file
 
 
 def export_year_workbook(extracted_files, output_file):
@@ -1003,48 +1011,27 @@ def run_single_file(pdf_file, output_file):
 
 
 def run_folder(input_path, output_dir, output_name_template=None, preserve_relative_folders=True):
-    groups = discover_pdf_groups(input_path)
-    written_files = []
-
-    if not groups:
-        raise FileNotFoundError(f"No PDF files found in folder: {input_path}")
-
-    for _, group_info in sorted(groups.items(), key=lambda item: (item[0][1], item[0][0])):
-        file_items = group_info["files"]
-        print(
-            f"\nMemproses rekening {group_info['account']} tahun {group_info['year']} "
-            f"({len(file_items)} file PDF)"
-        )
-        extracted_files = []
-
-        for file_item in sorted(file_items, key=lambda item: (item["metadata"]["month_order"], item["path"].name)):
-            pdf_file = file_item["path"]
-            metadata = file_item["metadata"]
-            print(f"Memproses file: {pdf_file.name}")
-            df_final, df_summary = process_pdf(pdf_file)
-
-            extracted_files.append({
-                "pdf_file": pdf_file,
-                "transactions": df_final,
-                "summary": df_summary,
-                "summary_row": build_month_summary(df_final, df_summary, pdf_file, metadata),
-                "sheet_name": metadata["month_label"].replace("-", "_"),
-                "month_order": metadata["month_order"],
-                "year": metadata["year"],
-            })
-
-        relative_folder = Path(group_info["year"]) if preserve_relative_folders else Path()
-        output_folder = output_dir / relative_folder
-        output_file = output_folder / output_name_for_group(
-            group_info,
-            output_name_template,
-            force_unique=len(groups) > 1,
-        )
-        export_year_workbook(extracted_files, output_file)
-        written_files.append(output_file)
-        print(f"Workbook selesai dibuat: {output_file}")
-
-    return written_files
+    input_path, output_dir = Path(input_path), Path(output_dir)
+    files = [input_path] if input_path.is_file() else sorted(input_path.rglob("*.pdf"))
+    if not files:
+        raise FileNotFoundError(f"No PDF files found in {input_path}")
+    groups = {}
+    for pdf_file in files:
+        transactions, recap = process_pdf(pdf_file)
+        for item in account_export_items(transactions, recap, pdf_file):
+            groups.setdefault((item["account"], item["year"]), []).append(item)
+    written = []
+    for (account, year), items in sorted(groups.items()):
+        folder = output_dir / year if preserve_relative_folders else output_dir
+        group = {"account": account, "year": year, "folder": year}
+        name = output_name_for_group(group, output_name_template, force_unique=len(groups) > 1)
+        # Custom names must also distinguish accounts in multi-account PDFs.
+        if len({key[0] for key in groups}) > 1 and account not in name:
+            name = f"{Path(name).stem}_{account}.xlsx"
+        destination = folder / name
+        export_year_workbook(sorted(items, key=lambda item:item["month_order"]), destination)
+        written.append(destination)
+    return written
 
 
 def choose_batch_options_with_gui():

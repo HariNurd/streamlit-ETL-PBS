@@ -1,3 +1,4 @@
+from services.pdf_statement_adapter import extract_frames, summary_metrics
 import re
 import argparse
 import sys
@@ -583,29 +584,15 @@ def build_month_summary(clean_df, df_summary_final, pdf_file, metadata=None):
         "Mutasi Kredit Frek": summary_value(df_summary_final, "MUTASI CR", "Frekuensi"),
         "Saldo (Rp)": summary_value(df_summary_final, "SALDO AKHIR", "Amount"),
         "Saldo Awal (Rp)": summary_value(df_summary_final, "SALDO AWAL", "Amount"),
-        "Adm": sum_by_description(clean_df, "DB", r"\bADM\b|ADMIN|BIAYA\s+ADMIN"),
-        "Pajak": sum_by_description(clean_df, "DB", r"\bPPH\b|PAJAK|TAX"),
-        "Bunga": sum_by_description(clean_df, "CR", r"BUNGA|INTEREST"),
-        "Saldo Min": sum_by_description(clean_df, "DB", r"SALDO\s+MIN"),
-        "JaGir": sum_by_description(clean_df, "CR", r"JASA\s+GIRO|JAGIR"),
+        **summary_metrics(clean_df),
     }
 
     return row
 
 
 def process_pdf(pdf_file):
-    """Extract one BCA PDF into transaction and summary dataframes."""
-    df = read_pdf_table(pdf_file)
-    df = remove_garbage_rows(df)
-
-    df_trans, df_summary = split_summary_rows(df)
-    clean_df = merge_continuation_rows(df_trans)
-    clean_df = finalize_transactions(clean_df)
-    df_summary_final = build_summary_dataframe(df_summary)
-    clean_df = reconcile_transactions_with_balance(clean_df, df_summary_final)
-    report_extraction_balance(clean_df, df_summary_final, pdf_file)
-
-    return clean_df, df_summary_final
+    """Parse through the validated shared PDF entry point."""
+    return extract_frames(pdf_file, "BCA")
 
 
 def reconcile_transactions_with_balance(clean_df, df_summary_final):
@@ -922,19 +909,17 @@ def style_summary_sheet(sheet):
             sheet.cell(row=row_num, column=col_num).font = Font(bold=True)
 
 
-def export_to_excel(clean_df, df_summary_final, output_file, pdf_file=None):
-    """Write transaction and summary dataframes to Excel."""
+def export_to_excel(df_final, df_summary, output_file, pdf_file=None):
+    output_file = Path(output_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
         if pdf_file is None:
-            dataframe_for_excel(clean_df).to_excel(writer, sheet_name="Transaksi", index=False)
+            dataframe_for_excel(df_final).to_excel(writer, sheet_name="Transaksi", index=False)
+            dataframe_for_excel(df_summary).to_excel(writer, sheet_name="Summary", index=False)
         else:
-            write_monthly_transaction_sheet(writer, clean_df, df_summary_final, pdf_file, "Transaksi")
-
-        dataframe_for_excel(df_summary_final).to_excel(writer, sheet_name="Summary", index=False)
-
-        sheet2 = writer.sheets["Summary"]
-
-        auto_fit_columns(sheet2)
+            pdf_file = Path(pdf_file)
+            write_summary_sheet(writer, [build_month_summary(df_final, df_summary, pdf_file)])
+            write_monthly_transaction_sheet(writer, df_final, df_summary, pdf_file, "Transaksi")
 
 
 def export_year_workbook(extracted_files, output_file):
@@ -1003,6 +988,13 @@ def output_name_for_group(group_info, output_name_template=None, force_unique=Fa
         output_name = f"{output_path.stem}_{year}{output_path.suffix}"
 
     return output_name
+
+
+def convert_pdf(pdf_file, output_file):
+    pdf_file, output_file = Path(pdf_file), Path(output_file)
+    transactions, summary = process_pdf(pdf_file)
+    export_to_excel(transactions, summary, output_file, pdf_file)
+    return output_file
 
 
 def run_single_file(pdf_file, output_file):
