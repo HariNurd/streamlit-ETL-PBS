@@ -73,6 +73,7 @@ FORBIDDEN_SUFFIXES = (
 SENSITIVE_DIRECTORIES = {
     "cache",
     "input_train",
+    "key",
     "outputs",
     "temp",
     "train",
