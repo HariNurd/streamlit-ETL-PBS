@@ -1,6 +1,6 @@
 # PDF Parser Documentation
 
-This document explains the bank statement PDF extraction interface, supported layouts, validation rules, and Excel integration. It complements the [project README](README.md).
+This document explains the bank statement PDF extraction interface, supported layouts, validation rules, and Excel integration.
 
 The five bank PDF converters use `generate_labels.extract_statement()` as their shared entry point. Streamlit remains the interface, and the bank converters retain their Excel reporting responsibilities. The SLIK and TXT extraction workflows are separate and were not changed by this PDF migration.
 
@@ -145,7 +145,7 @@ PDF parser versions in `extractors/bank_statement_extractor.py` are:
 | BCA, BNI, DKI, Mandiri | `2.0.0` |
 | BRI | `2.0.1` |
 
-These versions invalidate older parsed cache entries. BRI's patch version includes the recap page-break fix. The TXT parser version was not changed by these PDF updates.
+These versions invalidate older parsed cache entries. BRI's patch version includes the recap page-break fix.
 
 ## Verification
 
@@ -180,5 +180,3 @@ These are separate, overlapping sample runs. They do not establish support for e
 | [bank_statement_extractor.py](extractors/bank_statement_extractor.py) | ETL parser registration, versions, caching, and lineage. |
 | [test_pdf_statement_parsers.py](tests/test_pdf_statement_parsers.py) | Synthetic regression tests. |
 | [verify_pdf_parsers.py](scripts/verify_pdf_parsers.py) | Local PDF and Excel verification. |
-
-Keep this file at the repository root beside `README.md` so the README's relative documentation link resolves on GitHub.
